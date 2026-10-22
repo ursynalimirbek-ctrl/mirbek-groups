@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mirbek Group System</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:Segoe UI,sans-serif;
+    background:#f5f7fa;
+}
+
+header{
+    background:#2563eb;
+    color:white;
+    text-align:center;
+    padding:20px;
+}
+
+.controls{
+    padding:20px;
+    text-align:center;
+}
+
+input,select,button{
+    padding:10px;
+    margin:5px;
+    border-radius:8px;
+    border:1px solid #ccc;
+}
+
+button{
+    background:#2563eb;
+    color:white;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#1d4ed8;
+}
+
+.group{
+    background:white;
+    margin:20px;
+    border-radius:15px;
+    padding:20px;
+    box-shadow:0 2px 8px rgba(0,0,0,.1);
+}
+
+.group h2{
+    color:#2563eb;
+    margin-bottom:15px;
+}
+
+.members{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+    gap:10px;
+}
+
+.member{
+    background:#eef4ff;
+    padding:10px;
+    border-radius:10px;
+    text-align:center;
+}
+
+.editBtn{
+    background:orange;
+}
+
+.deleteBtn{
+    background:red;
+}
+
+.adminOnly{
+    display:none;
+}
+
+.admin .adminOnly{
+    display:inline-block;
+}
+
+.dark{
+    background:#111827;
+    color:white;
+}
+
+.dark .group{
+    background:#1f2937;
+}
+
+.dark .member{
+    background:#374151;
+    color:white;
+}
+
+.dark input,
+.dark select{
+    background:#374151;
+    color:white;
+    border:1px solid #555;
+}
+
+footer{
+    text-align:center;
+    padding:20px;
+    background:#111827;
+    color:white;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>📚 Mirbek Group System</h1>
+<p id="adminStatus">Гость</p>
+
+<button onclick="login()">🔒 Вход</button>
+<button onclick="logout()" class="adminOnly">Выйти</button>
+<button onclick="toggleTheme()">🌙 Тёмная тема</button>
+
+<h3>Всего участников: <span id="totalCount">0</span></h3>
+</header>
+
+<div class="controls">
+
+<input type="text"
+id="searchName"
+placeholder="Поиск по имени"
+onkeyup="searchUsers()">
+
+<input type="text"
+id="searchGroup"
+placeholder="Поиск по группе"
+onkeyup="searchUsers()">
+
+<br>
+
+<div class="adminOnly">
+
+<input type="text"
+id="newName"
+placeholder="Имя">
+
+<select id="groupSelect">
+<option>Группа 1</option>
+<option>Группа 2</option>
+<option>Группа 3</option>
+<option>Группа 4</option>
+</select>
+
+<button onclick="addPerson()">
+Добавить
+</button>
+
+</div>
+
+</div>
+
+<div class="group">
+<h2>Группа 1</h2>
+<div class="members" id="group1"></div>
+</div>
+
+<div class="group">
+<h2>Группа 2</h2>
+<div class="members" id="group2"></div>
+</div>
+
+<div class="group">
+<h2>Группа 3</h2>
+<div class="members" id="group3"></div>
+</div>
+
+<div class="group">
+<h2>Группа 4</h2>
+<div class="members" id="group4"></div>
+</div>
+
+<footer>
+© 2026 Mirbek Group System
+</footer>
+
+<script>
+
+const ADMIN_LOGIN="mirbek";
+const ADMIN_PASSWORD="7777";
+
+let isAdmin=false;
+
+function login(){
+
+let login=prompt("Логин");
+let password=prompt("Пароль");
+
+if(
+login===ADMIN_LOGIN &&
+password===ADMIN_PASSWORD
+){
+
+isAdmin=true;
+document.body.classList.add("admin");
+
+document.getElementById("adminStatus")
+.innerText="Администратор";
+
+alert("Добро пожаловать!");
+
+}else{
+
+alert("Неверный логин или пароль");
+
+}
+
+}
+
+function logout(){
+
+isAdmin=false;
+
+document.body.classList.remove("admin");
+
+document.getElementById("adminStatus")
+.innerText="Гость";
+
+}
+
+function createMember(name,groupId){
+
+let member=document.createElement("div");
+
+member.className="member";
+
+member.innerHTML=`
+<span>${name}</span>
+<br><br>
+<button class="editBtn adminOnly"
+onclick="editPerson(this)">
+✏️
+</button>
+
+<button class="deleteBtn adminOnly"
+onclick="deletePerson(this)">
+🗑️
+</button>
+`;
+
+document
+.getElementById(groupId)
+.appendChild(member);
+
+}
+
+function addPerson(){
+
+let name=
+document.getElementById("newName").value;
+
+if(name==="") return;
+
+let group=
+document.getElementById("groupSelect").value;
+
+let groupId=
+group.replace("Группа ","group");
+
+createMember(name,groupId);
+
+savePeople();
+updateCount();
+
+document.getElementById("newName").value="";
+
+}
+
+function editPerson(btn){
+
+let span=
+btn.parentElement.querySelector("span");
+
+let newName=
+prompt("Новое имя",span.innerText);
+
+if(newName){
+
+span.innerText=newName;
+savePeople();
+
+}
+
+}
+
+function deletePerson(btn){
+
+if(confirm("Удалить?")){
+
+btn.parentElement.remove();
+
+savePeople();
+updateCount();
+
+}
+
+}
+
+function searchUsers(){
+
+let nameSearch=
+document.getElementById("searchName")
+.value.toLowerCase();
+
+let groupSearch=
+document.getElementById("searchGroup")
+.value.toLowerCase();
+
+document.querySelectorAll(".group")
+.forEach(group=>{
+
+let groupName=
+group.querySelector("h2")
+.innerText.toLowerCase();
+
+group.querySelectorAll(".member")
+.forEach(member=>{
+
+let user=
+member.querySelector("span")
+.innerText.toLowerCase();
+
+let show=
+user.includes(nameSearch)
+&&
+groupName.includes(groupSearch);
+
+member.style.display=
+show?"block":"none";
+
+});
+
+});
+
+}
+
+function updateCount(){
+
+document.getElementById("totalCount")
+.innerText=
+document.querySelectorAll(".member").length;
+
+}
+
+function savePeople(){
+
+let data={};
+
+for(let i=1;i<=4;i++){
+
+let arr=[];
+
+document
+.querySelectorAll("#group"+i+" .member span")
+.forEach(el=>arr.push(el.innerText));
+
+data["group"+i]=arr;
+
+}
+
+localStorage.setItem(
+"students",
+JSON.stringify(data)
+);
+
+}
+
+function loadPeople(){
+
+let data=
+JSON.parse(
+localStorage.getItem("students")
+);
+
+if(data){
+
+for(let i=1;i<=4;i++){
+
+let group=
+document.getElementById("group"+i);
+
+group.innerHTML="";
+
+data["group"+i]
+.forEach(name=>{
+
+createMember(
+name,
+"group"+i
+);
+
+});
+
+}
+
+}else{
+
+for(let i=1;i<=30;i++){
+createMember("Участник "+i,"group1");
+}
+
+for(let i=31;i<=60;i++){
+createMember("Участник "+i,"group2");
+}
+
+for(let i=61;i<=90;i++){
+createMember("Участник "+i,"group3");
+}
+
+for(let i=91;i<=120;i++){
+createMember("Участник "+i,"group4");
+}
+
+savePeople();
+
+}
+
+updateCount();
+
+}
+
+function toggleTheme(){
+
+document.body.classList.toggle("dark");
+
+localStorage.setItem(
+"theme",
+document.body.classList.contains("dark")
+);
+
+}
+
+if(localStorage.getItem("theme")==="true"){
+document.body.classList.add("dark");
+}
+
+loadPeople();
+
+</script>
+
+</body>
+</html>
